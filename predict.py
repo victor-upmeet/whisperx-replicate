@@ -51,7 +51,6 @@ class Predictor(BasePredictor):
         result = whisperx.assign_word_speakers(diarize_segments, result)
 
         return ModelOutput(
-            segments=result["segments"],
-            detected_language=result["language"]
+            segments=result["segments"]
         )
 
