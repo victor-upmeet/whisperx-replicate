@@ -1,4 +1,6 @@
 build:
+  cuda: "11.7"
+
   # set to true if your model requires a GPU
   gpu: true
 
