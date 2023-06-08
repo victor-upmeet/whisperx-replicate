@@ -10,7 +10,6 @@ from cog import BasePredictor, Input, Path, BaseModel
 
 
 class ModelOutput(BaseModel):
-    detected_language: str
     segments: Any
 
 
