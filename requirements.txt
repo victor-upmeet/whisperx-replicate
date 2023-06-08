@@ -1,4 +1,4 @@
---index-url https://download.pytorch.org/whl/rocm5.4.2
+--extra-index-url https://download.pytorch.org/whl/rocm5.4.2
 torch>=2
 torchaudio>=2
 faster-whisper
