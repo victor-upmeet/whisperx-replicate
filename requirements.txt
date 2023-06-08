@@ -1,5 +1,4 @@
 --extra-index-url https://download.pytorch.org/whl/rocm5.4.2
-git+https://github.com/m-bain/whisperx.git
 torch==2.0.0+rocm5.4.2
 torchvision==0.15.1+rocm5.4.2
 torchaudio==2.0.1
