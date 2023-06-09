@@ -11,6 +11,7 @@ from cog import BasePredictor, Input, Path, BaseModel
 
 class ModelOutput(BaseModel):
     segments: Any
+    detected_language: str
 
 
 class Predictor(BasePredictor):
@@ -34,22 +35,23 @@ class Predictor(BasePredictor):
         # import gc; gc.collect(); torch.cuda.empty_cache(); del model
 
         # 2. Align whisper output
-        model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
-        result = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=False)
+        #model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
+        #result = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=False)
 
         # delete model if low on GPU resources
         # import gc; gc.collect(); torch.cuda.empty_cache(); del model_a
 
         # 3. Assign speaker labels
-        diarize_model = whisperx.DiarizationPipeline(use_auth_token="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", device=device)
+        #diarize_model = whisperx.DiarizationPipeline(use_auth_token="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", device=device)
 
         # add min/max number of speakers if known
-        diarize_segments = diarize_model(audio_file)
+        #diarize_segments = diarize_model(audio_file)
         # diarize_model(audio_file, min_speakers=min_speakers, max_speakers=max_speakers)
 
-        result = whisperx.assign_word_speakers(diarize_segments, result)
+        #result = whisperx.assign_word_speakers(diarize_segments, result)
 
         return ModelOutput(
-            segments=result["segments"]
+            segments=result["segments"],
+            detected_language=result["language"]
         )
 
