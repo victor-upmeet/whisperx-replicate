@@ -11,7 +11,7 @@ from cog import BasePredictor, Input, Path, BaseModel
 
 class ModelOutput(BaseModel):
     segments: Any
-    #detected_language: str
+    detected_language: str
 
 
 class Predictor(BasePredictor):
@@ -51,6 +51,7 @@ class Predictor(BasePredictor):
         #result = whisperx.assign_word_speakers(diarize_segments, result)
 
         return ModelOutput(
-            segments=result
+            segments=result["segments"],
+            detected_language=result["language"]
         )
 
