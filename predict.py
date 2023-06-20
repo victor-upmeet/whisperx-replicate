@@ -21,8 +21,6 @@ class Predictor(BasePredictor):
     def setup(self):
         """Loads whisper models into memory to make running multiple predictions efficient"""
 
-        self.model = whisperx.load_model("large-v2", device, compute_type=compute_type)
-
     def predict(
         self,
         audio_file: Path = Input(description="Audio file"),
@@ -43,15 +41,20 @@ class Predictor(BasePredictor):
             description="temperature to use for sampling",
         ),
     ) -> ModelOutput:
-        model = self.model
+        model = self.model = whisperx.load_model(
+            "large-v2",
+            device,
+            compute_type=compute_type,
+            temperature=temperature,
+            initial_prompt=initial_prompt,
+            best_of=best_of,
+            no_speech_threshold=no_speech_threshold
+        )
+
         audio = whisperx.load_audio(audio_file)
         result = model.transcribe(
             audio,
             batch_size=batch_size,
-            #temperature=temperature,
-            #initial_prompt=initial_prompt,
-            best_of=best_of,
-            no_speech_threshold=no_speech_threshold
         )
 
         return ModelOutput(
