@@ -44,14 +44,14 @@ class Predictor(BasePredictor):
         ),
     ) -> ModelOutput:
         model = self.model
-        audio = whisperx.load_audio(audio_file)
-        result = model.transcribe(
-            audio,
-            batch_size=batch_size,
-            temperatures=[temperature],
+        audio = whisperx.load_audio(audio_file,
+            temperature=temperature,
             initial_prompt=initial_prompt,
             best_of=best_of,
-            no_speech_threshold=no_speech_threshold
+            no_speech_threshold=no_speech_threshold)
+        result = model.transcribe(
+            audio,
+            batch_size=batch_size
         )
 
         return ModelOutput(
