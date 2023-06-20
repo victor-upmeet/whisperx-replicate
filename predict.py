@@ -25,11 +25,34 @@ class Predictor(BasePredictor):
 
     def predict(
         self,
-        audio_file: Path = Input(description="Audio file")
+        audio_file: Path = Input(description="Audio file"),
+        temperature: float = Input(
+            default=0,
+            description="temperature to use for sampling",
+        ),
+        initial_prompt: str = Input(
+            default=None,
+            description="optional text to provide as a prompt for the first window.",
+        ),
+        best_of: int = Input(
+            default=5,
+            description="number of candidates when sampling with non-zero temperature",
+        ),
+        no_speech_threshold: float = Input(
+            default=0.6,
+            description="temperature to use for sampling",
+        ),
     ) -> ModelOutput:
         model = self.model
         audio = whisperx.load_audio(audio_file)
-        result = model.transcribe(audio, batch_size=batch_size)
+        result = model.transcribe(
+            audio,
+            batch_size=batch_size,
+            temperature=temperature,
+            initial_prompt=initial_prompt,
+            best_of=best_of,
+            no_speech_threshold=no_speech_threshold
+        )
 
         return ModelOutput(
             segments=result["segments"],
