@@ -48,7 +48,7 @@ class Predictor(BasePredictor):
         result = model.transcribe(
             audio,
             batch_size=batch_size,
-            temperature=temperature,
+            temperatures=[temperature],
             initial_prompt=initial_prompt,
             best_of=best_of,
             no_speech_threshold=no_speech_threshold
