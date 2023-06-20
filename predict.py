@@ -41,14 +41,18 @@ class Predictor(BasePredictor):
             description="temperature to use for sampling",
         ),
     ) -> ModelOutput:
+        asr_options = {
+            "temperatures": [temperature],
+            "initial_prompt": initial_prompt,
+            "best_of": best_of,
+            "no_speech_threshold": no_speech_threshold
+        }
+
         model = self.model = whisperx.load_model(
             "large-v2",
             device,
             compute_type=compute_type,
-            temperature=temperature,
-            initial_prompt=initial_prompt,
-            best_of=best_of,
-            no_speech_threshold=no_speech_threshold
+            asr_options= asr_options
         )
 
         audio = whisperx.load_audio(audio_file)
