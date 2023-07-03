@@ -15,19 +15,19 @@ class ModelOutput(BaseModel):
 
 
 class Predictor(BasePredictor):
-    def __init__(self):
-        self.model = None
-
     def setup(self):
         """Loads whisper models into memory to make running multiple predictions efficient"""
 
-        self.model = whisperx.load_model("large-v2", device, compute_type=compute_type)
-
     def predict(
         self,
-        audio_file: Path = Input(description="Audio file")
+        audio_file: Path = Input(description="Audio file"),
+        language: str = None
     ) -> ModelOutput:
-        model = self.model
+        asr_options = {
+            "temperatures": [0.1],
+        }
+
+        model = whisperx.load_model("large-v2", device, compute_type=compute_type, language=language, asr_options=asr_options)
         audio = whisperx.load_audio(audio_file)
         result = model.transcribe(audio, batch_size=batch_size)
 
