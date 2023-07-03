@@ -21,7 +21,7 @@ class Predictor(BasePredictor):
     def predict(
         self,
         audio_file: Path = Input(description="Audio file"),
-        language: str = None
+        language: str = Input(default=None)
     ) -> ModelOutput:
         asr_options = {
             "temperatures": [0.1],
