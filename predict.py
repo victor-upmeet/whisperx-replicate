@@ -1,5 +1,7 @@
 from typing import Any
 
+import os
+import shutil
 import whisperx
 import time
 
@@ -17,7 +19,16 @@ class ModelOutput(BaseModel):
 
 class Predictor(BasePredictor):
     def setup(self):
-        """Loads whisper models into memory to make running multiple predictions efficient"""
+        source_folder = './models/vad'
+        destination_folder = '../root/.cache/torch'
+        file_name = 'whisperx-vad-segmentation.bin'
+
+        source_file_path = os.path.join(source_folder, file_name)
+        if os.path.exists(source_file_path):
+            destination_file_path = os.path.join(destination_folder, file_name)
+
+            if not os.path.exists(destination_file_path):
+                shutil.copy(source_file_path, destination_folder)
 
     def predict(
         self,
