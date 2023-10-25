@@ -30,7 +30,7 @@ class Predictor(BasePredictor):
 
         start_time = time.time_ns()  / 1e6
 
-        model = whisperx.load_model("large-v2", device, compute_type=compute_type, language=language, asr_options=asr_options)
+        model = whisperx.load_model("./models/fast-whisper-large-v2", device, compute_type=compute_type, language=language, asr_options=asr_options)
 
         elapsed_time = time.time_ns()  / 1e6 - start_time
         print(f"Duration to load model: {elapsed_time:.2f} ms")
