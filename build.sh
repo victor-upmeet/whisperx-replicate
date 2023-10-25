@@ -15,6 +15,6 @@ vad_model_dir=models/vad
 
 mkdir -p $vad_model_dir
 
-wget -O $vad_model_dir/whisperx-vad-segmentation.bin $(python ./get_vad_model_url.py)
+wget -O $vad_model_dir/whisperx-vad-segmentation.bin $(python3 ./get_vad_model_url.py)
 
 cog run python
