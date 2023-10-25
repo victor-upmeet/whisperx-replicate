@@ -23,6 +23,8 @@ class Predictor(BasePredictor):
         destination_folder = '../root/.cache/torch'
         file_name = 'whisperx-vad-segmentation.bin'
 
+        os.makedirs(destination_folder, exist_ok=True)
+
         source_file_path = os.path.join(source_folder, file_name)
         if os.path.exists(source_file_path):
             destination_file_path = os.path.join(destination_folder, file_name)
