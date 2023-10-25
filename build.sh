@@ -13,7 +13,7 @@ wget -O $faster_whisper_model_dir/vocabulary.txt https://huggingface.co/guillaum
 
 vad_model_dir=models/vad
 
-mkdir -i $vad_model_dir
+mkdir -p $vad_model_dir
 
 wget -O $vad_model_dir/whisperx-vad-segmentation.bin $(python ./get_vad_model_url.py)
 
