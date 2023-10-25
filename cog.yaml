@@ -1,17 +1,8 @@
 build:
-  cuda: "11.8"
-
-  # set to true if your model requires a GPU
+  cuda: "12.1"
   gpu: true
-
-  # a list of ubuntu apt packages to install
   system_packages:
     - "ffmpeg"
-
-  # python version in the form '3.8' or '3.8.12'
-  python_version: "3.10"
-
+  python_version: "3.11"
   python_requirements: requirements.txt
-
-# predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"
