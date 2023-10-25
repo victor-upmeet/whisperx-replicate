@@ -11,7 +11,7 @@ wget -O $faster_whisper_model_dir/model.bin https://huggingface.co/guillaumekln/
 wget -O $faster_whisper_model_dir/tokenizer.json https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/tokenizer.json
 wget -O $faster_whisper_model_dir/vocabulary.txt https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/vocabulary.txt
 
-pip install -u git+https://github.com/m-bain/whisperx.git
+pip install -U git+https://github.com/m-bain/whisperx.git
 
 vad_model_dir=models/vad
 
