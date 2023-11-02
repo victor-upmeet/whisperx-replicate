@@ -1,3 +1,4 @@
+from cog import BasePredictor, Input, Path, BaseModel
 from typing import Any
 
 import os
@@ -6,10 +7,7 @@ import whisperx
 import time
 import torch
 
-device = "cuda"
-compute_type = "float16" # change to "int8" if low on GPU mem (may reduce accuracy)
-
-from cog import BasePredictor, Input, Path, BaseModel
+compute_type = "float16"  # change to "int8" if low on GPU mem (may reduce accuracy)
 
 
 class ModelOutput(BaseModel):
@@ -33,36 +31,46 @@ class Predictor(BasePredictor):
                 shutil.copy(source_file_path, destination_folder)
 
     def predict(
-        self,
-        audio_file: Path = Input(description="Audio file"),
-        language: str = Input(description="ISO code of the language spoken in the audio, specify None to perform language detection", default=None),
-        batch_size: int = Input(description="Parallelization of input audio transcription", default=32),
-        debug: bool = Input(description="Print out memory usage information.", default=False)
+            self,
+            audio_file: Path = Input(description="Audio file"),
+            language: str = Input(
+                description="ISO code of the language spoken in the audio, specify None to perform language detection",
+                default=None),
+            batch_size: int = Input(
+                description="Parallelization of input audio transcription",
+                default=64),
+            temperature: float = Input(
+                description="Temperature to use for sampling",
+                default=0),
+            debug: bool = Input(
+                description="Print out compute/inference times and memory usage information.",
+                default=False)
     ) -> ModelOutput:
         with torch.inference_mode():
             asr_options = {
-                "temperatures": [0.1],
+                "temperatures": [temperature],
             }
 
-            start_time = time.time_ns()  / 1e6
+            start_time = time.time_ns() / 1e6
 
-            model = whisperx.load_model("./models/fast-whisper-large-v2", device, compute_type=compute_type, language=language, asr_options=asr_options)
+            model = whisperx.load_model("./models/fast-whisper-large-v2", "cuda",
+                                        compute_type=compute_type, language=language, asr_options=asr_options)
 
-            elapsed_time = time.time_ns()  / 1e6 - start_time
+            elapsed_time = time.time_ns() / 1e6 - start_time
             print(f"Duration to load model: {elapsed_time:.2f} ms")
 
             start_time = time.time_ns() / 1e6
 
             audio = whisperx.load_audio(audio_file)
 
-            elapsed_time = time.time_ns()  / 1e6 - start_time
+            elapsed_time = time.time_ns() / 1e6 - start_time
             print(f"Duration to load audio: {elapsed_time:.2f} ms")
 
             start_time = time.time_ns() / 1e6
 
             result = model.transcribe(audio, batch_size=batch_size)
 
-            elapsed_time = time.time_ns()  / 1e6 - start_time
+            elapsed_time = time.time_ns() / 1e6 - start_time
             print(f"Duration to transcribe: {elapsed_time:.2f} ms")
 
             if debug:
