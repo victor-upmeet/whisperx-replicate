@@ -36,6 +36,9 @@ class Predictor(BasePredictor):
             language: str = Input(
                 description="ISO code of the language spoken in the audio, specify None to perform language detection",
                 default=None),
+            initial_prompt: str = Input(
+                description="Optional text to provide as a prompt for the first window",
+                default=None),
             batch_size: int = Input(
                 description="Parallelization of input audio transcription",
                 default=64),
@@ -49,6 +52,7 @@ class Predictor(BasePredictor):
         with torch.inference_mode():
             asr_options = {
                 "temperatures": [temperature],
+                "initial_prompt": initial_prompt
             }
 
             start_time = time.time_ns() / 1e6
