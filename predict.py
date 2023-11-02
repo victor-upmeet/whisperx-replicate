@@ -4,9 +4,9 @@ import os
 import shutil
 import whisperx
 import time
+import torch
 
 device = "cuda"
-batch_size = 16 # reduce if low on GPU mem
 compute_type = "float16" # change to "int8" if low on GPU mem (may reduce accuracy)
 
 from cog import BasePredictor, Input, Path, BaseModel
@@ -35,7 +35,9 @@ class Predictor(BasePredictor):
     def predict(
         self,
         audio_file: Path = Input(description="Audio file"),
-        language: str = Input(default=None)
+        language: str = Input(description="ISO code of the language spoken in the audio, specify None to perform language detection", default=None),
+        batch_size: int = Input(description="Parallelization of input audio transcription", default=32),
+        debug: bool = Input(description="Print out memory usage information.", default=False)
     ) -> ModelOutput:
         asr_options = {
             "temperatures": [0.1],
@@ -61,6 +63,9 @@ class Predictor(BasePredictor):
 
         elapsed_time = time.time_ns()  / 1e6 - start_time
         print(f"Duration to transcribe: {elapsed_time:.2f} ms")
+
+        if debug:
+            print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
 
         return ModelOutput(
             segments=result["segments"],
