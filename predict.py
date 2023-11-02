@@ -39,33 +39,34 @@ class Predictor(BasePredictor):
         batch_size: int = Input(description="Parallelization of input audio transcription", default=32),
         debug: bool = Input(description="Print out memory usage information.", default=False)
     ) -> ModelOutput:
-        asr_options = {
-            "temperatures": [0.1],
-        }
+        with torch.inference_mode():
+            asr_options = {
+                "temperatures": [0.1],
+            }
 
-        start_time = time.time_ns()  / 1e6
+            start_time = time.time_ns()  / 1e6
 
-        model = whisperx.load_model("./models/fast-whisper-large-v2", device, compute_type=compute_type, language=language, asr_options=asr_options)
+            model = whisperx.load_model("./models/fast-whisper-large-v2", device, compute_type=compute_type, language=language, asr_options=asr_options)
 
-        elapsed_time = time.time_ns()  / 1e6 - start_time
-        print(f"Duration to load model: {elapsed_time:.2f} ms")
+            elapsed_time = time.time_ns()  / 1e6 - start_time
+            print(f"Duration to load model: {elapsed_time:.2f} ms")
 
-        start_time = time.time_ns() / 1e6
+            start_time = time.time_ns() / 1e6
 
-        audio = whisperx.load_audio(audio_file)
+            audio = whisperx.load_audio(audio_file)
 
-        elapsed_time = time.time_ns()  / 1e6 - start_time
-        print(f"Duration to load audio: {elapsed_time:.2f} ms")
+            elapsed_time = time.time_ns()  / 1e6 - start_time
+            print(f"Duration to load audio: {elapsed_time:.2f} ms")
 
-        start_time = time.time_ns() / 1e6
+            start_time = time.time_ns() / 1e6
 
-        result = model.transcribe(audio, batch_size=batch_size)
+            result = model.transcribe(audio, batch_size=batch_size)
 
-        elapsed_time = time.time_ns()  / 1e6 - start_time
-        print(f"Duration to transcribe: {elapsed_time:.2f} ms")
+            elapsed_time = time.time_ns()  / 1e6 - start_time
+            print(f"Duration to transcribe: {elapsed_time:.2f} ms")
 
-        if debug:
-            print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
+            if debug:
+                print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
 
         return ModelOutput(
             segments=result["segments"],
