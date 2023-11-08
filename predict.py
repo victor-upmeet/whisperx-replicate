@@ -47,10 +47,10 @@ class Predictor(BasePredictor):
                 description="Temperature to use for sampling",
                 default=0),
             align_output: bool = Input(
-                description="Aligns whisper output",
+                description="Aligns whisper output to get accurate word-level timestamps",
                 default=False),
             diarization: bool = Input(
-                description="Diarizes segments",
+                description="Assign speaker ID labels",
                 default=False),
             huggingface_access_token: str = Input(
                 description="To enable diarization, please enter your HuggingFace token (read). You need to accept "
