@@ -8,6 +8,7 @@ import time
 import torch
 
 compute_type = "float16"  # change to "int8" if low on GPU mem (may reduce accuracy)
+device = "cuda"
 
 
 class ModelOutput(BaseModel):
@@ -45,8 +46,24 @@ class Predictor(BasePredictor):
             temperature: float = Input(
                 description="Temperature to use for sampling",
                 default=0),
+            align_output: bool = Input(
+                description="Aligns whisper output",
+                default=False),
+            diarize_segments: bool = Input(
+                description="Diarizes segments",
+                default=False),
+            huggingface_access_token: str = Input(
+                description="To enable diarization, please enter your HuggingFace token (read). You need to accept "
+                            "the user agreement for the models specified in the README.",
+                default=None),
+            min_speakers: int = Input(
+                description="Minimum number of speakers if diarization is activated (leave blank if unknown)",
+                default=None),
+            max_speakers: int = Input(
+                description="Maximum number of speakers if diarization is activated (leave blank if unknown)",
+                default=None),
             debug: bool = Input(
-                description="Print out compute/inference times and memory usage information.",
+                description="Print out compute/inference times and memory usage information",
                 default=False)
     ) -> ModelOutput:
         with torch.inference_mode():
@@ -57,25 +74,51 @@ class Predictor(BasePredictor):
 
             start_time = time.time_ns() / 1e6
 
-            model = whisperx.load_model("./models/fast-whisper-large-v2", "cuda",
+            model = whisperx.load_model("./models/fast-whisper-large-v2", device,
                                         compute_type=compute_type, language=language, asr_options=asr_options)
 
-            elapsed_time = time.time_ns() / 1e6 - start_time
-            print(f"Duration to load model: {elapsed_time:.2f} ms")
+            if debug:
+                elapsed_time = time.time_ns() / 1e6 - start_time
+                print(f"Duration to load model: {elapsed_time:.2f} ms")
 
             start_time = time.time_ns() / 1e6
 
             audio = whisperx.load_audio(audio_file)
 
-            elapsed_time = time.time_ns() / 1e6 - start_time
-            print(f"Duration to load audio: {elapsed_time:.2f} ms")
+            if debug:
+                elapsed_time = time.time_ns() / 1e6 - start_time
+                print(f"Duration to load audio: {elapsed_time:.2f} ms")
 
             start_time = time.time_ns() / 1e6
 
             result = model.transcribe(audio, batch_size=batch_size)
 
-            elapsed_time = time.time_ns() / 1e6 - start_time
-            print(f"Duration to transcribe: {elapsed_time:.2f} ms")
+            if debug:
+                elapsed_time = time.time_ns() / 1e6 - start_time
+                print(f"Duration to transcribe: {elapsed_time:.2f} ms")
+
+            if align_output:
+                start_time = time.time_ns() / 1e6
+
+                model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
+                result = whisperx.align(result["segments"], model_a, metadata, audio, device,
+                                        return_char_alignments=False)
+
+                if debug:
+                    elapsed_time = time.time_ns() / 1e6 - start_time
+                    print(f"Duration to align output: {elapsed_time:.2f} ms")
+
+            if diarize_segments:
+                start_time = time.time_ns() / 1e6
+
+                diarize_model = whisperx.DiarizationPipeline(use_auth_token=huggingface_access_token, device=device)
+                diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
+
+                result = whisperx.assign_word_speakers(diarize_segments, result)
+
+                if debug:
+                    elapsed_time = time.time_ns() / 1e6 - start_time
+                    print(f"Duration to diarize segments: {elapsed_time:.2f} ms")
 
             if debug:
                 print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
