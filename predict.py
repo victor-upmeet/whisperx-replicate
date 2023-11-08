@@ -49,7 +49,7 @@ class Predictor(BasePredictor):
             align_output: bool = Input(
                 description="Aligns whisper output",
                 default=False),
-            diarize_segments: bool = Input(
+            diarization: bool = Input(
                 description="Diarizes segments",
                 default=False),
             huggingface_access_token: str = Input(
@@ -108,11 +108,11 @@ class Predictor(BasePredictor):
                     elapsed_time = time.time_ns() / 1e6 - start_time
                     print(f"Duration to align output: {elapsed_time:.2f} ms")
 
-            if diarize_segments:
+            if diarization:
                 start_time = time.time_ns() / 1e6
 
                 diarize_model = whisperx.DiarizationPipeline(use_auth_token=huggingface_access_token, device=device)
-                diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
+                diarize_segments = diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
 
                 result = whisperx.assign_word_speakers(diarize_segments, result)
 
