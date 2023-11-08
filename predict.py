@@ -92,6 +92,7 @@ class Predictor(BasePredictor):
             start_time = time.time_ns() / 1e6
 
             result = model.transcribe(audio, batch_size=batch_size)
+            detected_language = result["language"]
 
             if debug:
                 elapsed_time = time.time_ns() / 1e6 - start_time
@@ -125,5 +126,5 @@ class Predictor(BasePredictor):
 
         return ModelOutput(
             segments=result["segments"],
-            detected_language=result["language"]
+            detected_language=detected_language
         )
