@@ -3,3 +3,4 @@ whisperx.egg-info/
 .ipynb_checkpoints
 .idea
 venv
+hg_access_token.txt
