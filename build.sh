@@ -28,11 +28,4 @@ mkdir -p $vad_model_dir
 
 download $(python3 ./get_vad_model_url.py) "$vad_model_dir/whisperx-vad-segmentation.bin"
 
-if [ ! -e "hg_access_token.txt" ]; then
-  echo "hg_access_token.txt not found. Please create it and write your HuggingFace access token (read) in it."
-  exit 1
-fi
-
-docker secret create hg_access_token hg_access_token.txt
-
 cog run python
