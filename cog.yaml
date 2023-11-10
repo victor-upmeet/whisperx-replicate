@@ -5,10 +5,4 @@ build:
     - "ffmpeg"
   python_version: "3.11"
   python_requirements: requirements.txt
-  run:
-    - command: cat /run/secrets/hg_access_token > /etc/hg_access_token.txt
-      mounts:
-        - type: secret
-          id: hg_access_token
-          target: /etc
 predict: "predict.py:Predictor"
