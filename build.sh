@@ -2,21 +2,32 @@
 
 set -e
 
-faster_whisper_model_dir=models/fast-whisper-large-v2
+download() {
+  local file_url="$1"
+  local destination_path="$2"
 
+  if [ ! -e "$destination_path" ]; then
+    wget -O "$destination_path" "$file_url"
+  else
+      echo "$destination_path already exists. No need to download."
+  fi
+}
+
+faster_whisper_model_dir=models/fast-whisper-large-v2
 mkdir -p $faster_whisper_model_dir
 
-wget -O $faster_whisper_model_dir/config.json https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/config.json
-wget -O $faster_whisper_model_dir/model.bin https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/model.bin
-wget -O $faster_whisper_model_dir/tokenizer.json https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/tokenizer.json
-wget -O $faster_whisper_model_dir/vocabulary.txt https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/vocabulary.txt
+download "https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/config.json" "$faster_whisper_model_dir/config.json"
+download "https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/model.bin" "$faster_whisper_model_dir/model.bin"
+download "https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/tokenizer.json" "$faster_whisper_model_dir/tokenizer.json"
+download "https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/vocabulary.txt" "$faster_whisper_model_dir/vocabulary.txt"
 
 pip install -U git+https://github.com/m-bain/whisperx.git
 
 vad_model_dir=models/vad
-
 mkdir -p $vad_model_dir
 
-wget -O $vad_model_dir/whisperx-vad-segmentation.bin $(python3 ./get_vad_model_url.py)
+download $(python3 ./get_vad_model_url.py) "$vad_model_dir/whisperx-vad-segmentation.bin"
+
+docker secret create hg_access_token hg_access_token.txt
 
 cog run python
