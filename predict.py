@@ -46,6 +46,12 @@ class Predictor(BasePredictor):
             temperature: float = Input(
                 description="Temperature to use for sampling",
                 default=0),
+            vad_onset: float = Input(
+                description="VAD onset",
+                default=0.500),
+            vad_offset: float = Input(
+                description="VAD offset",
+                default=0.363),
             align_output: bool = Input(
                 description="Aligns whisper output to get accurate word-level timestamps",
                 default=False),
@@ -72,10 +78,16 @@ class Predictor(BasePredictor):
                 "initial_prompt": initial_prompt
             }
 
+            vad_options = {
+                "vad_onset": vad_onset,
+                "vad_offset": vad_offset
+            }
+
             start_time = time.time_ns() / 1e6
 
             model = whisperx.load_model("./models/fast-whisper-large-v2", device,
-                                        compute_type=compute_type, language=language, asr_options=asr_options)
+                                        compute_type=compute_type, language=language, asr_options=asr_options,
+                                        vad_options=vad_options)
 
             if debug:
                 elapsed_time = time.time_ns() / 1e6 - start_time
