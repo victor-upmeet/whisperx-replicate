@@ -115,21 +115,6 @@ class Predictor(BasePredictor):
             torch.cuda.empty_cache()
             del model
 
-            if align_output:
-                start_time = time.time_ns() / 1e6
-
-                model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
-                result = whisperx.align(result["segments"], model_a, metadata, audio, device,
-                                        return_char_alignments=False)
-
-                if debug:
-                    elapsed_time = time.time_ns() / 1e6 - start_time
-                    print(f"Duration to align output: {elapsed_time:.2f} ms")
-
-                gc.collect()
-                torch.cuda.empty_cache()
-                del model_a
-
             if diarization:
                 start_time = time.time_ns() / 1e6
 
@@ -146,6 +131,21 @@ class Predictor(BasePredictor):
                 gc.collect()
                 torch.cuda.empty_cache()
                 del diarize_model
+
+            if align_output:
+                start_time = time.time_ns() / 1e6
+
+                model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
+                result = whisperx.align(result["segments"], model_a, metadata, audio, device,
+                                        return_char_alignments=False)
+
+                if debug:
+                    elapsed_time = time.time_ns() / 1e6 - start_time
+                    print(f"Duration to align output: {elapsed_time:.2f} ms")
+
+                gc.collect()
+                torch.cuda.empty_cache()
+                del model_a
 
             if debug:
                 print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
