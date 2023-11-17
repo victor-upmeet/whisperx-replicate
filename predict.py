@@ -19,8 +19,6 @@ class ModelOutput(BaseModel):
 
 class Predictor(BasePredictor):
     def setup(self):
-        print(f"Setting up model")
-
         source_folder = './models/vad'
         destination_folder = '../root/.cache/torch'
         file_name = 'whisperx-vad-segmentation.bin'
