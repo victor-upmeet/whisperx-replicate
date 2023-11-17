@@ -1,6 +1,7 @@
 from cog import BasePredictor, Input, Path, BaseModel
 from typing import Any
 
+import gc
 import os
 import shutil
 import whisperx
@@ -113,6 +114,10 @@ class Predictor(BasePredictor):
                 print(f"Duration to transcribe: {elapsed_time:.2f} ms")
 
             if align_output:
+                gc.collect()
+                torch.cuda.empty_cache()
+                del model
+
                 start_time = time.time_ns() / 1e6
 
                 model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
@@ -124,6 +129,10 @@ class Predictor(BasePredictor):
                     print(f"Duration to align output: {elapsed_time:.2f} ms")
 
             if diarization:
+                gc.collect()
+                torch.cuda.empty_cache()
+                del model
+
                 start_time = time.time_ns() / 1e6
 
                 diarize_model = whisperx.DiarizationPipeline(model_name='pyannote/speaker-diarization@2.1',
