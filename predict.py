@@ -111,11 +111,11 @@ class Predictor(BasePredictor):
                 elapsed_time = time.time_ns() / 1e6 - start_time
                 print(f"Duration to transcribe: {elapsed_time:.2f} ms")
 
-            if align_output:
-                gc.collect()
-                torch.cuda.empty_cache()
-                del model
+            gc.collect()
+            torch.cuda.empty_cache()
+            del model
 
+            if align_output:
                 start_time = time.time_ns() / 1e6
 
                 model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
@@ -126,11 +126,11 @@ class Predictor(BasePredictor):
                     elapsed_time = time.time_ns() / 1e6 - start_time
                     print(f"Duration to align output: {elapsed_time:.2f} ms")
 
-            if diarization:
                 gc.collect()
                 torch.cuda.empty_cache()
-                del model
+                del model_a
 
+            if diarization:
                 start_time = time.time_ns() / 1e6
 
                 diarize_model = whisperx.DiarizationPipeline(model_name='pyannote/speaker-diarization@2.1',
@@ -142,6 +142,10 @@ class Predictor(BasePredictor):
                 if debug:
                     elapsed_time = time.time_ns() / 1e6 - start_time
                     print(f"Duration to diarize segments: {elapsed_time:.2f} ms")
+
+                gc.collect()
+                torch.cuda.empty_cache()
+                del diarize_model
 
             if debug:
                 print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
