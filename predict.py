@@ -17,6 +17,44 @@ class ModelOutput(BaseModel):
     detected_language: str
 
 
+def align(audio, result, debug):
+    start_time = time.time_ns() / 1e6
+
+    model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
+    result = whisperx.align(result["segments"], model_a, metadata, audio, device,
+                            return_char_alignments=False)
+
+    if debug:
+        elapsed_time = time.time_ns() / 1e6 - start_time
+        print(f"Duration to align output: {elapsed_time:.2f} ms")
+
+    gc.collect()
+    torch.cuda.empty_cache()
+    del model_a
+
+    return result
+
+
+def diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers):
+    start_time = time.time_ns() / 1e6
+
+    diarize_model = whisperx.DiarizationPipeline(model_name='pyannote/speaker-diarization@2.1',
+                                                 use_auth_token=huggingface_access_token, device=device)
+    diarize_segments = diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
+
+    result = whisperx.assign_word_speakers(diarize_segments, result)
+
+    if debug:
+        elapsed_time = time.time_ns() / 1e6 - start_time
+        print(f"Duration to diarize segments: {elapsed_time:.2f} ms")
+
+    gc.collect()
+    torch.cuda.empty_cache()
+    del diarize_model
+
+    return result
+
+
 class Predictor(BasePredictor):
     def setup(self):
         source_folder = './models/vad'
@@ -59,9 +97,10 @@ class Predictor(BasePredictor):
             diarization: bool = Input(
                 description="Assign speaker ID labels",
                 default=False),
-            alignment_before_diarization: bool = Input(
+            diarization_on_alignment_result: bool = Input(
                 description="If align_output and diarization are set to true: set true to diarize at word level, "
-                            "set false to diarize at segment level",
+                            "set false to diarize at segment level. Diarizing at segment level can decrease inference "
+                            "time, consider to do so if you don't need diarization at word-level.",
                 default=True
             ),
             huggingface_access_token: str = Input(
@@ -121,18 +160,23 @@ class Predictor(BasePredictor):
             del model
 
             if align_output and diarization:
-                if alignment_before_diarization:
-                    result = self.align(audio, result, debug)
-                    result = self.diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
+                if diarization_on_alignment_result:
+                    result = align(audio, result, debug)
+                    result = diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
                 else:
-                    result = self.diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
-                    result = self.align(audio, result, debug)
-            else:
-                if align_output:
-                    result = self.align(audio, result, debug)
+                    diarization_result = diarize(audio, result, debug, huggingface_access_token, min_speakers,
+                                                 max_speakers)
+                    result = align(audio, result, debug)
 
-                if diarization:
-                    result = self.diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
+                    for i in range(len(diarization_result["segments"])):
+                        diarization_result["segments"][i]["words"] = result["segments"][i]["words"]
+
+                    result = diarization_result
+            elif align_output:
+                result = align(audio, result, debug)
+
+            elif diarization:
+                result = diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
 
             if debug:
                 print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
@@ -141,39 +185,3 @@ class Predictor(BasePredictor):
             segments=result["segments"],
             detected_language=detected_language
         )
-
-    def align(self, audio, result, debug):
-        start_time = time.time_ns() / 1e6
-
-        model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
-        result = whisperx.align(result["segments"], model_a, metadata, audio, device,
-                                return_char_alignments=False)
-
-        if debug:
-            elapsed_time = time.time_ns() / 1e6 - start_time
-            print(f"Duration to align output: {elapsed_time:.2f} ms")
-
-        gc.collect()
-        torch.cuda.empty_cache()
-        del model_a
-
-        return result
-
-    def diarize(self, audio, result, debug, huggingface_access_token, min_speakers, max_speakers):
-        start_time = time.time_ns() / 1e6
-
-        diarize_model = whisperx.DiarizationPipeline(model_name='pyannote/speaker-diarization@2.1',
-                                                     use_auth_token=huggingface_access_token, device=device)
-        diarize_segments = diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
-
-        result = whisperx.assign_word_speakers(diarize_segments, result)
-
-        if debug:
-            elapsed_time = time.time_ns() / 1e6 - start_time
-            print(f"Duration to diarize segments: {elapsed_time:.2f} ms")
-
-        gc.collect()
-        torch.cuda.empty_cache()
-        del diarize_model
-
-        return result
