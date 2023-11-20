@@ -59,6 +59,11 @@ class Predictor(BasePredictor):
             diarization: bool = Input(
                 description="Assign speaker ID labels",
                 default=False),
+            alignment_before_diarization: bool = Input(
+                description="If align_output and diarization are set to true: set true to diarize at word level, "
+                            "set false to diarize at segment level",
+                default=True
+            ),
             huggingface_access_token: str = Input(
                 description="To enable diarization, please enter your HuggingFace token (read). You need to accept "
                             "the user agreement for the models specified in the README.",
@@ -115,37 +120,19 @@ class Predictor(BasePredictor):
             torch.cuda.empty_cache()
             del model
 
-            if diarization:
-                start_time = time.time_ns() / 1e6
+            if align_output and diarization:
+                if alignment_before_diarization:
+                    result = self.align(audio, result, debug)
+                    result = self.diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
+                else:
+                    result = self.diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
+                    result = self.align(audio, result, debug)
+            else:
+                if align_output:
+                    result = self.align(audio, result, debug)
 
-                diarize_model = whisperx.DiarizationPipeline(model_name='pyannote/speaker-diarization@2.1',
-                                                             use_auth_token=huggingface_access_token, device=device)
-                diarize_segments = diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
-
-                result = whisperx.assign_word_speakers(diarize_segments, result)
-
-                if debug:
-                    elapsed_time = time.time_ns() / 1e6 - start_time
-                    print(f"Duration to diarize segments: {elapsed_time:.2f} ms")
-
-                gc.collect()
-                torch.cuda.empty_cache()
-                del diarize_model
-
-            if align_output:
-                start_time = time.time_ns() / 1e6
-
-                model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
-                result = whisperx.align(result["segments"], model_a, metadata, audio, device,
-                                        return_char_alignments=False)
-
-                if debug:
-                    elapsed_time = time.time_ns() / 1e6 - start_time
-                    print(f"Duration to align output: {elapsed_time:.2f} ms")
-
-                gc.collect()
-                torch.cuda.empty_cache()
-                del model_a
+                if diarization:
+                    result = self.diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
 
             if debug:
                 print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
@@ -154,3 +141,39 @@ class Predictor(BasePredictor):
             segments=result["segments"],
             detected_language=detected_language
         )
+
+    def align(self, audio, result, debug):
+        start_time = time.time_ns() / 1e6
+
+        model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
+        result = whisperx.align(result["segments"], model_a, metadata, audio, device,
+                                return_char_alignments=False)
+
+        if debug:
+            elapsed_time = time.time_ns() / 1e6 - start_time
+            print(f"Duration to align output: {elapsed_time:.2f} ms")
+
+        gc.collect()
+        torch.cuda.empty_cache()
+        del model_a
+
+        return result
+
+    def diarize(self, audio, result, debug, huggingface_access_token, min_speakers, max_speakers):
+        start_time = time.time_ns() / 1e6
+
+        diarize_model = whisperx.DiarizationPipeline(model_name='pyannote/speaker-diarization@2.1',
+                                                     use_auth_token=huggingface_access_token, device=device)
+        diarize_segments = diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
+
+        result = whisperx.assign_word_speakers(diarize_segments, result)
+
+        if debug:
+            elapsed_time = time.time_ns() / 1e6 - start_time
+            print(f"Duration to diarize segments: {elapsed_time:.2f} ms")
+
+        gc.collect()
+        torch.cuda.empty_cache()
+        del diarize_model
+
+        return result
