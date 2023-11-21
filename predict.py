@@ -97,12 +97,10 @@ class Predictor(BasePredictor):
             diarization: bool = Input(
                 description="Assign speaker ID labels",
                 default=False),
-            diarization_on_alignment_result: bool = Input(
-                description="If align_output and diarization are set to true: set true to diarize at word level, "
-                            "set false to diarize at segment level. Diarizing at segment level can decrease inference "
-                            "time, consider to do so if you don't need diarization at word-level.",
-                default=True
-            ),
+            # diarization_on_alignment_result: bool = Input( description="If align_output and diarization are set to
+            # true: set true to diarize at word level, " "set false to diarize at segment level. Diarizing at segment
+            # level can decrease inference " "time, consider to do so if you don't need diarization at word-level.",
+            # default=True ),
             huggingface_access_token: str = Input(
                 description="To enable diarization, please enter your HuggingFace token (read). You need to accept "
                             "the user agreement for the models specified in the README.",
@@ -117,6 +115,8 @@ class Predictor(BasePredictor):
                 description="Print out compute/inference times and memory usage information",
                 default=False)
     ) -> ModelOutput:
+        diarization_on_alignment_result = True
+
         with torch.inference_mode():
             asr_options = {
                 "temperatures": [temperature],
