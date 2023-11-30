@@ -159,27 +159,28 @@ class Predictor(BasePredictor):
             torch.cuda.empty_cache()
             del model
 
-            if align_output and diarization:
-                if diarization_on_alignment_result:
+            if detected_language != "nn":
+                if align_output and diarization:
+                    if diarization_on_alignment_result:
+                        result = align(audio, result, debug)
+                        result = diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
+                    else:
+                        diarization_result = diarize(audio, result, debug, huggingface_access_token, min_speakers,
+                                                     max_speakers)
+                        result = align(audio, result, debug)
+
+                        for i in range(len(diarization_result["segments"])):
+                            diarization_result["segments"][i]["words"] = result["segments"][i]["words"]
+
+                        result = diarization_result
+                elif align_output:
                     result = align(audio, result, debug)
+
+                elif diarization:
                     result = diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
-                else:
-                    diarization_result = diarize(audio, result, debug, huggingface_access_token, min_speakers,
-                                                 max_speakers)
-                    result = align(audio, result, debug)
 
-                    for i in range(len(diarization_result["segments"])):
-                        diarization_result["segments"][i]["words"] = result["segments"][i]["words"]
-
-                    result = diarization_result
-            elif align_output:
-                result = align(audio, result, debug)
-
-            elif diarization:
-                result = diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
-
-            if debug:
-                print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
+                if debug:
+                    print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
 
         return ModelOutput(
             segments=result["segments"],
