@@ -159,7 +159,7 @@ class Predictor(BasePredictor):
             torch.cuda.empty_cache()
             del model
 
-            if detected_language != "nn":
+            if detected_language not in ["nn", "yo"]:
                 if align_output and diarization:
                     if diarization_on_alignment_result:
                         result = align(audio, result, debug)
