@@ -159,7 +159,7 @@ class Predictor(BasePredictor):
             torch.cuda.empty_cache()
             del model
 
-            if detected_language not in ["nn", "yo"]:
+            if detected_language in whisperx.alignment.DEFAULT_ALIGN_MODELS_TORCH or detected_language in whisperx.alignment.DEFAULT_ALIGN_MODELS_HF:
                 if align_output and diarization:
                     if diarization_on_alignment_result:
                         result = align(audio, result, debug)
