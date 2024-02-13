@@ -13,13 +13,14 @@ download() {
   fi
 }
 
-faster_whisper_model_dir=models/fast-whisper-large-v2
+faster_whisper_model_dir=models/fast-whisper-large-v3
 mkdir -p $faster_whisper_model_dir
 
-download "https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/config.json" "$faster_whisper_model_dir/config.json"
-download "https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/model.bin" "$faster_whisper_model_dir/model.bin"
-download "https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/tokenizer.json" "$faster_whisper_model_dir/tokenizer.json"
-download "https://huggingface.co/guillaumekln/faster-whisper-large-v2/resolve/main/vocabulary.txt" "$faster_whisper_model_dir/vocabulary.txt"
+download "https://huggingface.co/Systran/faster-whisper-large-v3/blob/main/config.json" "$faster_whisper_model_dir/config.json"
+download "https://huggingface.co/Systran/faster-whisper-large-v3/blob/main/model.bin" "$faster_whisper_model_dir/model.bin"
+download "https://huggingface.co/Systran/faster-whisper-large-v3/blob/main/preprocessor_config.json" "$faster_whisper_model_dir/preprocessor_config.json"
+download "https://huggingface.co/Systran/faster-whisper-large-v3/blob/main/tokenizer.json" "$faster_whisper_model_dir/tokenizer.json"
+download "https://huggingface.co/Systran/faster-whisper-large-v3/blob/main/vocabulary.json" "$faster_whisper_model_dir/vocabulary.txt"
 
 pip install -U git+https://github.com/m-bain/whisperx.git
 
