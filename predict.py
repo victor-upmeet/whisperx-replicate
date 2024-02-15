@@ -14,6 +14,7 @@ import torch
 
 compute_type = "float16"  # change to "int8" if low on GPU mem (may reduce accuracy)
 device = "cuda"
+whisper_arch = "./models/faster-whisper-large-v3"
 
 
 class ModelOutput(BaseModel):
@@ -49,7 +50,8 @@ class Predictor(BasePredictor):
             ),
             language_detection_max_tries: int = Input(
                 description="If language is not specified, then the language will be detected following the logic of "
-                            "language_detection_min_prob parameter, but will stop after the given max retries"
+                            "language_detection_min_prob parameter, but will stop after the given max retries",
+                default=5
             ),
             initial_prompt: str = Input(
                 description="Optional text to provide as a prompt for the first window",
@@ -98,24 +100,33 @@ class Predictor(BasePredictor):
             }
 
             if language is None:
-                detected_language_details = detect_language(audio_file, get_audio_duration(audio_file),
-                                                            language_detection_min_prob, language_detection_max_tries,
-                                                            asr_options, vad_options)
+                audio_duration = get_audio_duration(audio_file)
+                segments_duration_ms = 30000
+
+                language_detection_max_tries = min(
+                    language_detection_max_tries,
+                    math.floor(audio_duration / segments_duration_ms)
+                )
+
+                segments_starts = distribute_segments_equally(audio_duration, segments_duration_ms,
+                                                              language_detection_max_tries)
+
+                detected_language_details = detect_language(audio_file, segments_starts, language_detection_min_prob,
+                                                            language_detection_max_tries, asr_options, vad_options)
 
                 detected_language_code = detected_language_details["language"]
                 detected_language_prob = detected_language_details["probability"]
                 detected_language_iterations = detected_language_details["iterations"]
 
-                print(f"Detected language {detected_language_code} with probability {detected_language_prob} after "
+                print(f"Detected language {detected_language_code} ({detected_language_prob:.2f}) after "
                       f"{detected_language_iterations} iterations.")
 
                 language = detected_language_details["language"]
 
             start_time = time.time_ns() / 1e6
 
-            model = whisperx.load_model("./models/faster-whisper-large-v3", device,
-                                        compute_type=compute_type, language=language, asr_options=asr_options,
-                                        vad_options=vad_options)
+            model = whisperx.load_model(whisper_arch, device, compute_type=compute_type, language=language,
+                                        asr_options=asr_options, vad_options=vad_options)
 
             if debug:
                 elapsed_time = time.time_ns() / 1e6 - start_time
@@ -161,24 +172,18 @@ def get_audio_duration(file_path):
     return len(AudioSegment.from_file(file_path))
 
 
-def detect_language(full_audio_file_path, full_audio_duration, language_detection_min_prob,
+def detect_language(full_audio_file_path, segments_starts, language_detection_min_prob,
                     language_detection_max_tries, asr_options, vad_options, iteration=1):
-    model = whisperx.load_model("./models/faster-whisper-large-v3", device,
-                                compute_type=compute_type, asr_options=asr_options,
+    model = whisperx.load_model(whisper_arch, device, compute_type=compute_type, asr_options=asr_options,
                                 vad_options=vad_options)
 
-    segments_duration_ms = 30000
+    start_ms = segments_starts[iteration - 1]
 
-    language_detection_max_tries = min(
-        language_detection_max_tries,
-        math.floor(full_audio_duration / segments_duration_ms)
-    )
-
-    start_ms = (iteration - 1) * segments_duration_ms
-
-    audio_segment_file_path = extract_audio_segment(full_audio_file_path, start_ms, segments_duration_ms)
+    audio_segment_file_path = extract_audio_segment(full_audio_file_path, start_ms, 30000)
 
     audio = whisperx.load_audio(audio_segment_file_path)
+
+    audio_segment_file_path.unlink()
 
     model_n_mels = model.model.feat_kwargs.get("feature_size")
     segment = log_mel_spectrogram(audio[: N_SAMPLES],
@@ -198,7 +203,7 @@ def detect_language(full_audio_file_path, full_audio_duration, language_detectio
             "iterations": iteration
         }
 
-    return detect_language(full_audio_file_path, full_audio_duration, language_detection_min_prob,
+    return detect_language(full_audio_file_path, segments_starts, language_detection_min_prob,
                            language_detection_max_tries, asr_options, vad_options, iteration + 1)
 
 
@@ -217,6 +222,41 @@ def extract_audio_segment(input_file_path, start_time_ms, duration_ms):
         extracted_segment.export(temp_file_path, format=file_extension.lstrip('.'))
 
     return temp_file_path
+
+
+def distribute_segments_equally(total_duration, segments_duration, iterations):
+    """
+    This function calculates the start times for segments to be equally distributed across an audio file.
+
+    Parameters:
+    - total_duration (int): The duration of the audio file in milliseconds.
+    - segments_duration (int): The duration of each segment in milliseconds.
+    - iterations (int): The number of segments to extract.
+
+    Returns:
+    - list[int]: A list of start times for each segment in milliseconds.
+    """
+
+    # Calculate the total available duration for segments to be placed
+    # This considers removing the duration of one segment from the total duration
+    # to ensure segments don't go beyond the total duration
+    available_duration = total_duration - segments_duration
+
+    # Calculate the spacing between the starts of each segment
+    # If iterations is 1, avoid division by zero by setting spacing to 0
+    if iterations > 1:
+        spacing = available_duration // (iterations - 1)
+    else:
+        spacing = 0
+
+    # Generate the list of start times for each segment
+    start_times = [i * spacing for i in range(iterations)]
+
+    # Ensure the last segment starts so that it ends exactly at the end of the audio if iterations > 1
+    if iterations > 1:
+        start_times[-1] = total_duration - segments_duration
+
+    return start_times
 
 
 def align(audio, result, debug):
