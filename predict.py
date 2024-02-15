@@ -130,7 +130,7 @@ class Predictor(BasePredictor):
 
             start_time = time.time_ns() / 1e6
 
-            model = whisperx.load_model("./models/fast-whisper-large-v3", device,
+            model = whisperx.load_model("large-v3", device,
                                         compute_type=compute_type, language=language, asr_options=asr_options,
                                         vad_options=vad_options)
 
