@@ -99,8 +99,9 @@ class Predictor(BasePredictor):
                 "vad_offset": vad_offset
             }
 
-            if language is None:
-                audio_duration = get_audio_duration(audio_file)
+            audio_duration = get_audio_duration(audio_file)
+
+            if language is None and audio_duration > 30000:
                 segments_duration_ms = 30000
 
                 language_detection_max_tries = min(
@@ -202,15 +203,23 @@ def detect_language(full_audio_file_path, segments_starts, language_detection_mi
     torch.cuda.empty_cache()
     del model
 
-    if language_probability >= language_detection_min_prob or iteration >= language_detection_max_tries:
-        return {
-            "language": language,
-            "probability": language_probability,
-            "iterations": iteration
-        }
+    detected_language = {
+        "language": language,
+        "probability": language_probability,
+        "iterations": iteration
+    }
 
-    return detect_language(full_audio_file_path, segments_starts, language_detection_min_prob,
-                           language_detection_max_tries, asr_options, vad_options, iteration + 1)
+    if language_probability >= language_detection_min_prob or iteration >= language_detection_max_tries:
+        return detected_language
+
+    next_iteration_detected_language = detect_language(full_audio_file_path, segments_starts,
+                                                       language_detection_min_prob, language_detection_max_tries,
+                                                       asr_options, vad_options, iteration + 1)
+
+    if next_iteration_detected_language["probability"] > detected_language["probability"]:
+        return next_iteration_detected_language
+
+    return detected_language
 
 
 def extract_audio_segment(input_file_path, start_time_ms, duration_ms):
