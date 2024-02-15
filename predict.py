@@ -17,7 +17,7 @@ device = "cuda"
 whisper_arch = "./models/faster-whisper-large-v3"
 
 
-class ModelOutput(BaseModel):
+class Output(BaseModel):
     segments: Any
     detected_language: str
 
@@ -88,7 +88,7 @@ class Predictor(BasePredictor):
             debug: bool = Input(
                 description="Print out compute/inference times and memory usage information",
                 default=False)
-    ) -> ModelOutput:
+    ) -> Output:
         with torch.inference_mode():
             asr_options = {
                 "temperatures": [temperature],
@@ -166,7 +166,7 @@ class Predictor(BasePredictor):
                 if debug:
                     print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
 
-        return ModelOutput(
+        return Output(
             segments=result["segments"],
             detected_language=detected_language
         )
