@@ -97,10 +97,6 @@ class Predictor(BasePredictor):
             diarization: bool = Input(
                 description="Assign speaker ID labels",
                 default=False),
-            # diarization_on_alignment_result: bool = Input( description="If align_output and diarization are set to
-            # true: set true to diarize at word level, " "set false to diarize at segment level. Diarizing at segment
-            # level can decrease inference " "time, consider to do so if you don't need diarization at word-level.",
-            # default=True ),
             huggingface_access_token: str = Input(
                 description="To enable diarization, please enter your HuggingFace token (read). You need to accept "
                             "the user agreement for the models specified in the README.",
@@ -115,8 +111,6 @@ class Predictor(BasePredictor):
                 description="Print out compute/inference times and memory usage information",
                 default=False)
     ) -> ModelOutput:
-        diarization_on_alignment_result = True
-
         with torch.inference_mode():
             asr_options = {
                 "temperatures": [temperature],
@@ -160,22 +154,8 @@ class Predictor(BasePredictor):
             del model
 
             if detected_language in whisperx.alignment.DEFAULT_ALIGN_MODELS_TORCH or detected_language in whisperx.alignment.DEFAULT_ALIGN_MODELS_HF:
-                if align_output and diarization:
-                    if diarization_on_alignment_result:
-                        result = align(audio, result, debug)
-                        result = diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
-                    else:
-                        diarization_result = diarize(audio, result, debug, huggingface_access_token, min_speakers,
-                                                     max_speakers)
-                        result = align(audio, result, debug)
-
-                        for i in range(len(diarization_result["segments"])):
-                            diarization_result["segments"][i]["words"] = result["segments"][i]["words"]
-
-                        result = diarization_result
-                elif align_output:
+                if align_output:
                     result = align(audio, result, debug)
-
                 elif diarization:
                     result = diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
 
