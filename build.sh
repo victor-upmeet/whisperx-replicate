@@ -13,7 +13,7 @@ download() {
   fi
 }
 
-faster_whisper_model_dir=models/fast-whisper-large-v3
+faster_whisper_model_dir=models/faster-whisper-large-v3
 mkdir -p $faster_whisper_model_dir
 
 download "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/main/config.json" "$faster_whisper_model_dir/config.json"
