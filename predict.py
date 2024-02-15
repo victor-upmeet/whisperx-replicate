@@ -111,6 +111,8 @@ class Predictor(BasePredictor):
                 segments_starts = distribute_segments_equally(audio_duration, segments_duration_ms,
                                                               language_detection_max_tries)
 
+                print("Detecting languages on segments starting at " + ', '.join(map(str, segments_starts)))
+
                 detected_language_details = detect_language(audio_file, segments_starts, language_detection_min_prob,
                                                             language_detection_max_tries, asr_options, vad_options)
 
@@ -195,6 +197,10 @@ def detect_language(full_audio_file_path, segments_starts, language_detection_mi
     language = language_token[2:-2]
 
     print(f"Iteration {iteration} - Detected language: {language} ({language_probability:.2f})")
+
+    gc.collect()
+    torch.cuda.empty_cache()
+    del model
 
     if language_probability >= language_detection_min_prob or iteration >= language_detection_max_tries:
         return {
