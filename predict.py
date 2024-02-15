@@ -50,7 +50,8 @@ class Predictor(BasePredictor):
             ),
             language_detection_max_tries: int = Input(
                 description="If language is not specified, then the language will be detected following the logic of "
-                            "language_detection_min_prob parameter, but will stop after the given max retries",
+                            "language_detection_min_prob parameter, but will stop after the given max retries. If max "
+                            "retries is reached, the most probable language is kept.",
                 default=5
             ),
             initial_prompt: str = Input(
