@@ -102,7 +102,7 @@ class Predictor(BasePredictor):
 
             audio_duration = get_audio_duration(audio_file)
 
-            if language is None and audio_duration > 30000:
+            if language is None and language_detection_min_prob > 0 and audio_duration > 30000:
                 segments_duration_ms = 30000
 
                 language_detection_max_tries = min(
@@ -187,8 +187,6 @@ def detect_language(full_audio_file_path, segments_starts, language_detection_mi
 
     audio = whisperx.load_audio(audio_segment_file_path)
 
-    audio_segment_file_path.unlink()
-
     model_n_mels = model.model.feat_kwargs.get("feature_size")
     segment = log_mel_spectrogram(audio[: N_SAMPLES],
                                   n_mels=model_n_mels if model_n_mels is not None else 80,
@@ -199,6 +197,8 @@ def detect_language(full_audio_file_path, segments_starts, language_detection_mi
     language = language_token[2:-2]
 
     print(f"Iteration {iteration} - Detected language: {language} ({language_probability:.2f})")
+
+    audio_segment_file_path.unlink()
 
     gc.collect()
     torch.cuda.empty_cache()
