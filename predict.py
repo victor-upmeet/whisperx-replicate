@@ -157,14 +157,17 @@ class Predictor(BasePredictor):
             torch.cuda.empty_cache()
             del model
 
-            if detected_language in whisperx.alignment.DEFAULT_ALIGN_MODELS_TORCH or detected_language in whisperx.alignment.DEFAULT_ALIGN_MODELS_HF:
-                if align_output:
+            if align_output:
+                if detected_language in whisperx.alignment.DEFAULT_ALIGN_MODELS_TORCH or detected_language in whisperx.alignment.DEFAULT_ALIGN_MODELS_HF:
                     result = align(audio, result, debug)
-                elif diarization:
-                    result = diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
+                else:
+                    print(f"Cannot align output as language {detected_language} is not supported for alignment")
 
-                if debug:
-                    print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
+            if diarization:
+                result = diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
+
+            if debug:
+                print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
 
         return Output(
             segments=result["segments"],
@@ -241,34 +244,15 @@ def extract_audio_segment(input_file_path, start_time_ms, duration_ms):
 
 
 def distribute_segments_equally(total_duration, segments_duration, iterations):
-    """
-    This function calculates the start times for segments to be equally distributed across an audio file.
-
-    Parameters:
-    - total_duration (int): The duration of the audio file in milliseconds.
-    - segments_duration (int): The duration of each segment in milliseconds.
-    - iterations (int): The number of segments to extract.
-
-    Returns:
-    - list[int]: A list of start times for each segment in milliseconds.
-    """
-
-    # Calculate the total available duration for segments to be placed
-    # This considers removing the duration of one segment from the total duration
-    # to ensure segments don't go beyond the total duration
     available_duration = total_duration - segments_duration
 
-    # Calculate the spacing between the starts of each segment
-    # If iterations is 1, avoid division by zero by setting spacing to 0
     if iterations > 1:
         spacing = available_duration // (iterations - 1)
     else:
         spacing = 0
 
-    # Generate the list of start times for each segment
     start_times = [i * spacing for i in range(iterations)]
 
-    # Ensure the last segment starts so that it ends exactly at the end of the audio if iterations > 1
     if iterations > 1:
         start_times[-1] = total_duration - segments_duration
 
