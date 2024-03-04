@@ -236,7 +236,10 @@ def extract_audio_segment(input_file_path, start_time_ms, duration_ms):
         temp_file_path = Path(temp_file.name)
         try:
             (
-                ffmpeg.input(input_file_path.name, ss=start_time_ms).output(temp_file.name, t=duration_ms).run()
+                ffmpeg
+                .input(input_file_path.name, ss=start_time_ms)
+                .output(temp_file.name, t=duration_ms)
+                .run(capture_stdout=True, capture_stderr=True)
             )
         except ffmpeg.Error as e:
             print("ffmpeg error occurred: ", e.stderr.decode('utf-8'))
