@@ -237,8 +237,8 @@ def extract_audio_segment(input_file_path, start_time_ms, duration_ms):
         try:
             (
                 ffmpeg
-                .input(input_file_path.name, ss=start_time_ms)
-                .output(temp_file.name, t=duration_ms)
+                .input(input_file_path.name, ss=start_time_ms/1000)
+                .output(temp_file.name, t=duration_ms/1000)
                 .run(capture_stdout=True, capture_stderr=True)
             )
         except ffmpeg.Error as e:
