@@ -234,6 +234,9 @@ def extract_audio_segment(input_file_path, start_time_ms, duration_ms):
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
         temp_file_path = Path(temp_file.name)
+
+        print(f"Extracting from ${input_file_path.name} to ${temp_file.name}")
+
         try:
             (
                 ffmpeg
