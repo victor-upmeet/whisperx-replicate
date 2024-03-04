@@ -235,12 +235,12 @@ def extract_audio_segment(input_file_path, start_time_ms, duration_ms):
     with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
         temp_file_path = Path(temp_file.name)
 
-        print(f"Extracting from ${input_file_path.name} to ${temp_file.name}")
+        print(f"Extracting from {input_file_path.name} to {temp_file.name}")
 
         try:
             (
                 ffmpeg
-                .input(input_file_path.name, ss=start_time_ms/1000)
+                .input(input_file_path, ss=start_time_ms/1000)
                 .output(temp_file.name, t=duration_ms/1000)
                 .run(capture_stdout=True, capture_stderr=True)
             )
