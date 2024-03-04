@@ -1,5 +1,4 @@
 from cog import BasePredictor, Input, Path, BaseModel
-from pydub import AudioSegment
 from typing import Any
 from whisperx.audio import N_SAMPLES, log_mel_spectrogram
 
@@ -11,6 +10,7 @@ import whisperx
 import tempfile
 import time
 import torch
+import ffmpeg
 
 compute_type = "float16"  # change to "int8" if low on GPU mem (may reduce accuracy)
 device = "cuda"
@@ -176,7 +176,9 @@ class Predictor(BasePredictor):
 
 
 def get_audio_duration(file_path):
-    return len(AudioSegment.from_file(file_path))
+    probe = ffmpeg.probe(file_path)
+    stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'), None)
+    return float(stream['duration']) * 1000
 
 
 def detect_language(full_audio_file_path, segments_starts, language_detection_min_prob,
@@ -228,17 +230,11 @@ def detect_language(full_audio_file_path, segments_starts, language_detection_mi
 
 def extract_audio_segment(input_file_path, start_time_ms, duration_ms):
     input_file_path = Path(input_file_path) if not isinstance(input_file_path, Path) else input_file_path
-
-    audio = AudioSegment.from_file(input_file_path)
-
-    end_time_ms = start_time_ms + duration_ms
-    extracted_segment = audio[start_time_ms:end_time_ms]
-
     file_extension = input_file_path.suffix
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
         temp_file_path = Path(temp_file.name)
-        extracted_segment.export(temp_file_path, format=file_extension.lstrip('.'))
+        ffmpeg.input(input_file_path, ss=start_time_ms).output(temp_file_path, t=duration_ms).run()
 
     return temp_file_path
 
