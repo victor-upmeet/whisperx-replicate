@@ -1,6 +1,6 @@
---extra-index-url https://download.pytorch.org/whl/cu124
-torch==2.4.0+cu124
-torchvision==0.19.0+cu124
-torchaudio==2.4.0+cu124
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch==2.1.0+cu121
+torchvision==0.16.0+cu121
+torchaudio==2.1.0+cu121
 ffmpeg-python
 git+https://github.com/m-bain/whisperx.git
