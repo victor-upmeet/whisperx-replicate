@@ -1,5 +1,5 @@
 build:
-  cuda: "12.4"
+  cuda: "12.41
   gpu: true
   system_packages:
     - "ffmpeg"
