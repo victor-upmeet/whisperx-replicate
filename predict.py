@@ -213,50 +213,41 @@ def get_audio_duration(file_path):
 
 
 def detect_language(full_audio_file_path, segments_starts, language_detection_min_prob,
-                    language_detection_max_tries, asr_options, vad_options, task, iteration=1):
+                    language_detection_max_tries, asr_options, vad_options, task):
     model = whisperx.load_model(whisper_arch, device, compute_type=compute_type, asr_options=asr_options, task=task,
                                 vad_options=vad_options)
+    try:
+        best = None
+        for iteration, start_ms in enumerate(segments_starts, start=1):
+            audio_segment_file_path = extract_audio_segment(full_audio_file_path, start_ms, 30000)
+            try:
+                audio = whisperx.load_audio(audio_segment_file_path)
+                model_n_mels = model.model.feat_kwargs.get("feature_size")
+                segment = log_mel_spectrogram(
+                    audio[:N_SAMPLES],
+                    n_mels=model_n_mels if model_n_mels is not None else 80,
+                    padding=0 if audio.shape[0] >= N_SAMPLES else N_SAMPLES - audio.shape[0]
+                )
+                encoder_output = model.model.encode(segment)
+                results = model.model.model.detect_language(encoder_output)
+                language_token, language_probability = results[0][0]
+                language = language_token[2:-2]
+            finally:
+                audio_segment_file_path.unlink()
 
-    start_ms = segments_starts[iteration - 1]
+            print(f"Iteration {iteration} - Detected language: {language} ({language_probability:.2f})")
 
-    audio_segment_file_path = extract_audio_segment(full_audio_file_path, start_ms, 30000)
+            detected = {"language": language, "probability": language_probability, "iterations": iteration}
+            if best is None or language_probability > best["probability"]:
+                best = detected
+            if language_probability >= language_detection_min_prob:
+                break
 
-    audio = whisperx.load_audio(audio_segment_file_path)
-
-    model_n_mels = model.model.feat_kwargs.get("feature_size")
-    segment = log_mel_spectrogram(audio[: N_SAMPLES],
-                                  n_mels=model_n_mels if model_n_mels is not None else 80,
-                                  padding=0 if audio.shape[0] >= N_SAMPLES else N_SAMPLES - audio.shape[0])
-    encoder_output = model.model.encode(segment)
-    results = model.model.model.detect_language(encoder_output)
-    language_token, language_probability = results[0][0]
-    language = language_token[2:-2]
-
-    print(f"Iteration {iteration} - Detected language: {language} ({language_probability:.2f})")
-
-    audio_segment_file_path.unlink()
-
-    gc.collect()
-    torch.cuda.empty_cache()
-    del model
-
-    detected_language = {
-        "language": language,
-        "probability": language_probability,
-        "iterations": iteration
-    }
-
-    if language_probability >= language_detection_min_prob or iteration >= language_detection_max_tries:
-        return detected_language
-
-    next_iteration_detected_language = detect_language(full_audio_file_path, segments_starts,
-                                                       language_detection_min_prob, language_detection_max_tries,
-                                                       asr_options, vad_options, task, iteration + 1)
-
-    if next_iteration_detected_language["probability"] > detected_language["probability"]:
-        return next_iteration_detected_language
-
-    return detected_language
+        return best
+    finally:
+        gc.collect()
+        torch.cuda.empty_cache()
+        del model
 
 
 def extract_audio_segment(input_file_path, start_time_ms, duration_ms):
