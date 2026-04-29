@@ -177,8 +177,13 @@ class Predictor(BasePredictor):
 
 def get_audio_duration(file_path):
     probe = ffmpeg.probe(file_path)
-    stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'), None)
-    return float(stream['duration']) * 1000
+    audio_stream = next((s for s in probe['streams'] if s['codec_type'] == 'audio'), None)
+    if audio_stream is None:
+        raise ValueError(f"No audio stream found in {file_path}")
+    duration = audio_stream.get('duration') or probe.get('format', {}).get('duration')
+    if duration is None:
+        raise ValueError(f"Could not determine audio duration for {file_path}")
+    return float(duration) * 1000
 
 
 def detect_language(full_audio_file_path, segments_starts, language_detection_min_prob,
