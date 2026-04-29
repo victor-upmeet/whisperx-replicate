@@ -89,6 +89,9 @@ class Predictor(BasePredictor):
                 description="Print out compute/inference times and memory usage information",
                 default=False)
     ) -> Output:
+        if diarization and not huggingface_access_token:
+            raise ValueError("huggingface_access_token is required when diarization is enabled")
+
         with torch.inference_mode():
             asr_options = {
                 "temperatures": [temperature],
