@@ -1,6 +1,7 @@
 from cog import BasePredictor, Input, Path, BaseModel
 from typing import Any, Optional
 from whisperx.audio import N_SAMPLES, log_mel_spectrogram
+from whisperx.alignment import DEFAULT_ALIGN_MODELS_TORCH, DEFAULT_ALIGN_MODELS_HF
 
 import gc
 import math
@@ -165,7 +166,7 @@ class Predictor(BasePredictor):
             del model
 
             if align_output:
-                if detected_language in whisperx.alignment.DEFAULT_ALIGN_MODELS_TORCH or detected_language in whisperx.alignment.DEFAULT_ALIGN_MODELS_HF:
+                if detected_language in DEFAULT_ALIGN_MODELS_TORCH or detected_language in DEFAULT_ALIGN_MODELS_HF:
                     result = align(audio, result, debug)
                 else:
                     print(f"Cannot align output as language {detected_language} is not supported for alignment")
