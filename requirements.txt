@@ -5,4 +5,4 @@ torchaudio==2.8.0+cu126
 ffmpeg-python
 pyannote.audio
 onnxruntime-gpu
-git+https://github.com/m-bain/whisperx.git@v3.8.5
+git+https://github.com/m-bain/whisperx.git@v3.3.2
