@@ -1,5 +1,5 @@
 from cog import BasePredictor, Input, Path, BaseModel
-from typing import Any
+from typing import Any, Optional
 from whisperx.audio import N_SAMPLES, log_mel_spectrogram
 
 import gc
