@@ -14,6 +14,11 @@ import time
 import torch
 import ffmpeg
 
+os.environ.setdefault(
+    "COG_USER_AGENT",
+    "whisperx-replicate (+https://github.com/victor-upmeet/whisperx-replicate)"
+)
+
 compute_type = "float16"  # change to "int8" if low on GPU mem (may reduce accuracy)
 device = "cuda"
 whisper_arch = "./models/faster-whisper-large-v3"
@@ -91,12 +96,19 @@ class Predictor(BasePredictor):
             max_speakers: Optional[int] = Input(
                 description="Maximum number of speakers if diarization is activated (leave blank if unknown)",
                 default=None),
+            user_agent: str = Input(
+                description="Override the User-Agent used to download the audio file. Useful when the host "
+                            "blocks the default value.",
+                default=None),
             debug: bool = Input(
                 description="Print out compute/inference times and memory usage information",
                 default=False)
     ) -> Output:
         if diarization and not huggingface_access_token:
             raise ValueError("huggingface_access_token is required when diarization is enabled")
+
+        if user_agent:
+            os.environ["COG_USER_AGENT"] = user_agent
 
         with torch.inference_mode():
             asr_options = {
