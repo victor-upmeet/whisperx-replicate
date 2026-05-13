@@ -1,7 +1,7 @@
 --extra-index-url https://download.pytorch.org/whl/cu126
-torch==2.11.0+cu126
+torch==2.8.0+cu126
 torchvision==0.27.0+cu126
-torchaudio==2.11.0+cu126
+torchaudio==2.8.0+cu126
 ffmpeg-python
 pyannote.audio
 git+https://github.com/m-bain/whisperx.git@v3.8.5
