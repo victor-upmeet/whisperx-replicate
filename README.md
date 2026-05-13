@@ -2,9 +2,8 @@
 
 This repo is the codebase behind the following Replicate models, which we use at [Upmeet](https://upmeet.ai):
 
-- [victor-upmeet/whisperx](https://replicate.com/victor-upmeet/whisperx) : if you don't know which model to use, use this one. It uses a low-cost hardware, which suits most cases
-- [victor-upmeet/whisperx-a40-large](https://replicate.com/victor-upmeet/whisperx-a40-large) : if you encounter some memory issues with previous models, consider this one. It can happen when dealing with long audio files and performing alignment and/or diarization
-- [victor-upmeet/whisperx-a100-80gb](https://replicate.com/victor-upmeet/whisperx-a100-80gb) : if you encounter some memory issues with previous models, consider this one. It can happen when dealing with long audio files and performing alignment and/or diarization
+- [victor-upmeet/whisperx](https://replicate.com/victor-upmeet/whisperx-a40-large): if you don't know which model to use, use this one. It uses a low-cost hardware, which suits most cases
+- [victor-upmeet/whisperx-a40-large](https://replicate.com/victor-upmeet/whisperx): if you encounter some memory issues with previous models, consider this one. It can happen when dealing with long audio files and performing alignment and/or diarization
 
 # Model Information
 
