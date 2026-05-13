@@ -237,7 +237,7 @@ def detect_language(full_audio_file_path, segments_starts, language_detection_mi
             finally:
                 audio_segment_file_path.unlink()
 
-            print(f"Iteration {iteration} - Detected language: {language} ({language_probability:.2f})")
+            logging.info(f"Iteration {iteration} - Detected language: {language} ({language_probability:.2f})")
 
             detected = {"language": language, "probability": language_probability, "iterations": iteration}
             if best is None or language_probability > best["probability"]:
