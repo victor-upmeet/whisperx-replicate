@@ -13,6 +13,7 @@ import tempfile
 import time
 import torch
 import ffmpeg
+import logging
 
 os.environ.setdefault(
     "COG_USER_AGENT",
@@ -23,6 +24,7 @@ compute_type = "float16"  # change to "int8" if low on GPU mem (may reduce accur
 device = "cuda"
 whisper_arch = "./models/faster-whisper-large-v3"
 
+logging.basicConfig(level=logging.INFO)
 
 class Output(BaseModel):
     segments: Any
@@ -134,7 +136,7 @@ class Predictor(BasePredictor):
                 segments_starts = distribute_segments_equally(audio_duration, segments_duration_ms,
                                                               language_detection_max_tries)
 
-                print("Detecting languages on segments starting at " + ', '.join(map(str, segments_starts)))
+                logging.info("Detecting languages on segments starting at " + ', '.join(map(str, segments_starts)))
 
                 detected_language_details = detect_language(audio_file, segments_starts, language_detection_min_prob,
                                                             language_detection_max_tries, asr_options, vad_options, task)
@@ -143,7 +145,7 @@ class Predictor(BasePredictor):
                 detected_language_prob = detected_language_details["probability"]
                 detected_language_iterations = detected_language_details["iterations"]
 
-                print(f"Detected language {detected_language_code} ({detected_language_prob:.2f}) after "
+                logging.info(f"Detected language {detected_language_code} ({detected_language_prob:.2f}) after "
                       f"{detected_language_iterations} iterations.")
 
                 language = detected_language_details["language"]
@@ -155,7 +157,7 @@ class Predictor(BasePredictor):
 
             if debug:
                 elapsed_time = time.time_ns() / 1e6 - start_time
-                print(f"Duration to load model: {elapsed_time:.2f} ms")
+                logging.info(f"Duration to load model: {elapsed_time:.2f} ms")
 
             start_time = time.time_ns() / 1e6
 
@@ -163,7 +165,7 @@ class Predictor(BasePredictor):
 
             if debug:
                 elapsed_time = time.time_ns() / 1e6 - start_time
-                print(f"Duration to load audio: {elapsed_time:.2f} ms")
+                logging.info(f"Duration to load audio: {elapsed_time:.2f} ms")
 
             start_time = time.time_ns() / 1e6
 
@@ -172,7 +174,7 @@ class Predictor(BasePredictor):
 
             if debug:
                 elapsed_time = time.time_ns() / 1e6 - start_time
-                print(f"Duration to transcribe: {elapsed_time:.2f} ms")
+                logging.info(f"Duration to transcribe: {elapsed_time:.2f} ms")
 
             gc.collect()
             torch.cuda.empty_cache()
@@ -182,13 +184,13 @@ class Predictor(BasePredictor):
                 if detected_language in DEFAULT_ALIGN_MODELS_TORCH or detected_language in DEFAULT_ALIGN_MODELS_HF:
                     result = align(audio, result, debug)
                 else:
-                    print(f"Cannot align output as language {detected_language} is not supported for alignment")
+                    logging.info(f"Cannot align output as language {detected_language} is not supported for alignment")
 
             if diarization:
                 result = diarize(audio, result, debug, huggingface_access_token, min_speakers, max_speakers)
 
             if debug:
-                print(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
+                logging.info(f"max gpu memory allocated over runtime: {torch.cuda.max_memory_reserved() / (1024 ** 3):.2f} GB")
 
         return Output(
             segments=result["segments"],
@@ -232,7 +234,7 @@ def detect_language(full_audio_file_path, segments_starts, language_detection_mi
     language_token, language_probability = results[0][0]
     language = language_token[2:-2]
 
-    print(f"Iteration {iteration} - Detected language: {language} ({language_probability:.2f})")
+    logging.info(f"Iteration {iteration} - Detected language: {language} ({language_probability:.2f})")
 
     audio_segment_file_path.unlink()
 
@@ -266,7 +268,7 @@ def extract_audio_segment(input_file_path, start_time_ms, duration_ms):
     with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
         temp_file_path = Path(temp_file.name)
 
-        print(f"Extracting from {input_file_path.name} to {temp_file.name}")
+        logging.info(f"Extracting from {input_file_path.name} to {temp_file.name}")
 
         try:
             (
@@ -276,7 +278,7 @@ def extract_audio_segment(input_file_path, start_time_ms, duration_ms):
                 .run(capture_stdout=True, capture_stderr=True, overwrite_output=True)
             )
         except ffmpeg.Error as e:
-            print("ffmpeg error occurred: ", e.stderr.decode('utf-8'))
+            logging.info("ffmpeg error occurred: ", e.stderr.decode('utf-8'))
             raise e
 
     return temp_file_path
@@ -307,7 +309,7 @@ def align(audio, result, debug):
 
     if debug:
         elapsed_time = time.time_ns() / 1e6 - start_time
-        print(f"Duration to align output: {elapsed_time:.2f} ms")
+        logging.info(f"Duration to align output: {elapsed_time:.2f} ms")
 
     gc.collect()
     torch.cuda.empty_cache()
@@ -326,7 +328,7 @@ def diarize(audio, result, debug, huggingface_access_token, min_speakers, max_sp
 
     if debug:
         elapsed_time = time.time_ns() / 1e6 - start_time
-        print(f"Duration to diarize segments: {elapsed_time:.2f} ms")
+        logging.info(f"Duration to diarize segments: {elapsed_time:.2f} ms")
 
     gc.collect()
     torch.cuda.empty_cache()
