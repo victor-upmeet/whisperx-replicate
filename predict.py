@@ -54,6 +54,10 @@ class Predictor(BasePredictor):
                             "retries is reached, the most probable language is kept.",
                 default=5
             ),
+            task: str = Input(
+                description="Task to perform on the audio file. Options are: transcribe, translate (English only)",
+                choices=["transcribe", "translate"],
+                default="transcribe"),
             initial_prompt: str = Input(
                 description="Optional text to provide as a prompt for the first window",
                 default=None),
@@ -116,7 +120,7 @@ class Predictor(BasePredictor):
                 print("Detecting languages on segments starting at " + ', '.join(map(str, segments_starts)))
 
                 detected_language_details = detect_language(audio_file, segments_starts, language_detection_min_prob,
-                                                            language_detection_max_tries, asr_options, vad_options)
+                                                            language_detection_max_tries, asr_options, vad_options, task)
 
                 detected_language_code = detected_language_details["language"]
                 detected_language_prob = detected_language_details["probability"]
@@ -130,7 +134,7 @@ class Predictor(BasePredictor):
             start_time = time.time_ns() / 1e6
 
             model = whisperx.load_model(whisper_arch, device, compute_type=compute_type, language=language,
-                                        asr_options=asr_options, vad_options=vad_options)
+                                        asr_options=asr_options, vad_options=vad_options, task=task)
 
             if debug:
                 elapsed_time = time.time_ns() / 1e6 - start_time
@@ -177,13 +181,22 @@ class Predictor(BasePredictor):
 
 def get_audio_duration(file_path):
     probe = ffmpeg.probe(file_path)
-    stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'), None)
-    return float(stream['duration']) * 1000
+
+    # First try to get duration from audio stream
+    stream = next((stream for stream in probe["streams"] if stream["codec_type"] == "audio"), None)
+    if stream and "duration" in stream:
+        return float(stream["duration"]) * 1000
+
+    # Fallback to format duration if stream duration is not available
+    if "format" in probe and "duration" in probe["format"]:
+        return float(probe["format"]["duration"]) * 1000
+
+    raise ValueError("Could not determine audio duration from file metadata")
 
 
 def detect_language(full_audio_file_path, segments_starts, language_detection_min_prob,
-                    language_detection_max_tries, asr_options, vad_options, iteration=1):
-    model = whisperx.load_model(whisper_arch, device, compute_type=compute_type, asr_options=asr_options,
+                    language_detection_max_tries, asr_options, vad_options, task, iteration=1):
+    model = whisperx.load_model(whisper_arch, device, compute_type=compute_type, asr_options=asr_options, task=task,
                                 vad_options=vad_options)
 
     start_ms = segments_starts[iteration - 1]
@@ -220,7 +233,7 @@ def detect_language(full_audio_file_path, segments_starts, language_detection_mi
 
     next_iteration_detected_language = detect_language(full_audio_file_path, segments_starts,
                                                        language_detection_min_prob, language_detection_max_tries,
-                                                       asr_options, vad_options, iteration + 1)
+                                                       asr_options, vad_options, task, iteration + 1)
 
     if next_iteration_detected_language["probability"] > detected_language["probability"]:
         return next_iteration_detected_language
