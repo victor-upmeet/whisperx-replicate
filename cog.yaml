@@ -1,5 +1,5 @@
 build:
-  cuda: "12.6"
+  cuda: "12.8"
   env:
     LD_LIBRARY_PATH: ""
   gpu: true
