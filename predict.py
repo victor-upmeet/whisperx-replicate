@@ -182,8 +182,9 @@ class Predictor(BasePredictor):
 def get_audio_duration(file_path):
     probe = ffmpeg.probe(file_path)
 
-    # First try to get duration from audio stream
     stream = next((stream for stream in probe["streams"] if stream["codec_type"] == "audio"), None)
+    if stream is None:
+        raise ValueError(f"No audio stream found in {file_path}")
     if stream and "duration" in stream:
         return float(stream["duration"]) * 1000
 
