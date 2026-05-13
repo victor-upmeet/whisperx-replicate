@@ -98,7 +98,7 @@ class Predictor(BasePredictor):
             max_speakers: Optional[int] = Input(
                 description="Maximum number of speakers if diarization is activated (leave blank if unknown)",
                 default=None),
-            user_agent: str = Input(
+            user_agent: Optional[str] = Input(
                 description="Override the User-Agent used to download the audio file. Useful when the host "
                             "blocks the default value.",
                 default=None),
