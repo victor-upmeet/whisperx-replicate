@@ -4,4 +4,4 @@ torchvision==0.16.0+cu121
 torchaudio==2.1.0+cu121
 ffmpeg-python
 pyannote.audio
-git+https://github.com/m-bain/whisperx.git
+git+https://github.com/m-bain/whisperx.git@v3.3.2
