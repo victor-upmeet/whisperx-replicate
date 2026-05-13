@@ -1,8 +1,8 @@
 build:
-  cuda: "12.1"
+  cuda: "12.6"
   gpu: true
   system_packages:
     - "ffmpeg"
-  python_version: "3.11"
+  python_version: "3.13"
   python_requirements: requirements.txt
 predict: "predict.py:Predictor"
