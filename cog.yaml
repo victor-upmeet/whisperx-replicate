@@ -1,8 +1,10 @@
 build:
   cuda: "12.6"
+  env:
+    LD_LIBRARY_PATH: "/usr/local/lib/python3.13/site-packages/torch/lib"
   gpu: true
-  system_packages:
     - "ffmpeg"
-  python_version: "3.13"
   python_requirements: requirements.txt
+  python_version: "3.13"
+  system_packages:
 predict: "predict.py:Predictor"
